@@ -1,45 +1,78 @@
-// chatgpt.js - Export the function for use in a Node.js environment
-const fetch = require('node-fetch'); // Make sure to install this: npm install node-fetch
+// chatgpt.js - Using Node.js built-in https module (no external dependencies)
+const https = require('https');
 
-async function testChatGptApiKey(apiKey = 'YOUR_OPENAI_API_KEY', prompt = "Hello, ChatGPT!") {
-  try {
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+async function testChatGptApiKey(apiKey = 'CHATGPT_API_KEY', prompt = "Hello, ChatGPT!") {
+  return new Promise((resolve, reject) => {
+    const data = JSON.stringify({
+      model: "gpt-4",
+      messages: [
+        { role: "system", content: "You are a helpful assistant." },
+        { role: "user", content: prompt }
+      ],
+      max_tokens: 100,
+      temperature: 0.7,
+    });
+
+    const options = {
+      hostname: 'api.openai.com',
+      path: '/v1/chat/completions',
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model: "gpt-4",
-        messages: [
-          { role: "system", content: "You are a helpful assistant." },
-          { role: "user", content: prompt }
-        ],
-        max_tokens: 100,
-        temperature: 0.7,
-      }),
+        'Content-Length': data.length
+      }
+    };
+
+    const req = https.request(options, (res) => {
+      let responseData = '';
+
+      res.on('data', (chunk) => {
+        responseData += chunk;
+      });
+
+      res.on('end', () => {
+        try {
+          const parsedData = JSON.parse(responseData);
+          
+          if (parsedData.choices && parsedData.choices[0].message) {
+            const response = parsedData.choices[0].message.content.trim();
+            console.log("ChatGPT Response:", response);
+            resolve(response);
+          } else {
+            console.error("Error: Failed to get response from ChatGPT", parsedData);
+            reject(new Error("Failed to get response from ChatGPT"));
+          }
+        } catch (e) {
+          console.error("Failed to parse response", e);
+          reject(e);
+        }
+      });
     });
 
-    const data = await response.json();
+    req.on('error', (error) => {
+      console.error("Request failed:", error);
+      reject(error);
+    });
 
-    if (data.choices && data.choices[0].message) {
-      console.log("ChatGPT Response:", data.choices[0].message.content.trim());
-      return data.choices[0].message.content.trim();
-    } else {
-      console.error("Error: Failed to get response from ChatGPT", data);
-      throw new Error("Failed to get response from ChatGPT");
-    }
-  } catch (error) {
-    console.error("Request failed:", error);
-    throw error;
-  }
+    req.write(data);
+    req.end();
+  });
 }
 
-// Export the function for use in other files
+// Export the function
 module.exports = {
   testChatGptApiKey
 };
 
-// Example usage in another file:
+// Example index.js or handler:
 // const { testChatGptApiKey } = require('./chatgpt');
-// testChatGptApiKey('YOUR_API_KEY', 'Hello, ChatGPT!');
+// 
+// exports.handler = async (event) => {
+//   try {
+//     const response = await testChatGptApiKey('YOUR_API_KEY', 'Hello');
+//     return { statusCode: 200, body: JSON.stringify({ response }) };
+//   } catch (error) {
+//     return { statusCode: 500, body: JSON.stringify({ error: error.message }) };
+//   }
+// };
