@@ -11,7 +11,7 @@ function copyEmailContent() {
             document.getElementById("content-box").value = "Sending to ChatGPT..."; // Show a temporary message
 
             // Full URL to your Vercel API
-            const apiUrl = 'https://auto-event-git-main-david-barsoums-projects.vercel.app/api/chat'; // Replace with your actual Vercel URL
+            const apiUrl = 'https://auto-event-git-main-david-barsoums-projects.vercel.app/api/chatgpt'; // Replace with your actual Vercel URL
 
             // Call the backend API to process the email content with ChatGPT
             try {
