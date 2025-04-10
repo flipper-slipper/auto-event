@@ -23,15 +23,22 @@ function copyEmailContent() {
                     body: JSON.stringify({ content: emailContent })
                 });
 
-                const data = await response.json();
+                // Check if the response is valid JSON
+                if (response.ok) {
+                    const data = await response.json();  // Parse the JSON response
 
-                // Display the response from ChatGPT in the content box
-                if (data.success) {
-                    document.getElementById("content-box").value = data.output;
+                    // Display the response from ChatGPT in the content box
+                    if (data.success) {
+                        document.getElementById("content-box").value = data.output;
+                    } else {
+                        document.getElementById("content-box").value = "Error: " + data.error;
+                    }
                 } else {
-                    document.getElementById("content-box").value = "Error: " + data.error;
+                    // Handle the case where the response is not OK (e.g., server error)
+                    document.getElementById("content-box").value = "Error: " + response.statusText;
                 }
             } catch (error) {
+                // Handle any other errors (e.g., network issues)
                 document.getElementById("content-box").value = "Error: " + error.message;
             }
         } else {
