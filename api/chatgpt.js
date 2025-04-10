@@ -1,4 +1,3 @@
-// /api/chatgpt.js
 const fetch = require('node-fetch'); // or use your preferred fetch implementation
 
 export default async function handler(req, res) {
@@ -10,24 +9,27 @@ export default async function handler(req, res) {
         }
 
         try {
-            const response = await fetch('https://api.openai.com/v1/completions', {
+            const response = await fetch('https://api.openai.com/v1/chat/completions', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${process.env.CHATGPT_API_KEY}`, // Use the OpenAI API key stored in Vercel's environment variables
                 },
                 body: JSON.stringify({
-                    model: "text-davinci-003", // or another model of your choice
-                    prompt: content,
-                    max_tokens: 1000,
+                    model: "gpt-4",  // Use the GPT-4 model
+                    messages: [
+                        { role: "system", content: "You are a helpful assistant." },  // Optional system message
+                        { role: "user", content: content }  // User's input
+                    ],
+                    max_tokens: 100,
                     temperature: 0.7,
                 }),
             });
 
             const data = await response.json();
 
-            if (data.choices && data.choices[0].text) {
-                res.status(200).json({ success: true, output: data.choices[0].text.trim() });
+            if (data.choices && data.choices[0].message) {
+                res.status(200).json({ success: true, output: data.choices[0].message.content.trim() });
             } else {
                 res.status(500).json({ success: false, error: 'Failed to get response from ChatGPT' });
             }
