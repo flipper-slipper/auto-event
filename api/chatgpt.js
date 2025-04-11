@@ -50,16 +50,20 @@ module.exports = async (req, res) => {
 // Function to call OpenAI API
 async function callChatGptApi(apiKey, prompt) {
   return new Promise((resolve, reject) => {
-    const data = JSON.stringify({
+    // Properly structure the request payload as JSON
+    const requestPayload = {
       model: "gpt-4",
       messages: [
         { role: "system", content: "You are a helpful assistant that processes emails to extract key information." },
         { role: "user", content: prompt }
       ],
       max_tokens: 500,
-      temperature: 0.7,
-    });
-
+      temperature: 0.7
+    };
+    
+    // Convert to string and calculate correct length
+    const jsonData = JSON.stringify(requestPayload);
+    
     const options = {
       hostname: 'api.openai.com',
       path: '/v1/chat/completions',
@@ -67,9 +71,21 @@ async function callChatGptApi(apiKey, prompt) {
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${apiKey}`,
-        'Content-Length': data.length
+        'Content-Length': Buffer.byteLength(jsonData)
       }
     };
+
+    // Debug logging for troubleshooting
+    console.log('Request options:', {
+      url: `https://${options.hostname}${options.path}`,
+      method: options.method,
+      headers: {
+        'Content-Type': options.headers['Content-Type'],
+        'Content-Length': options.headers['Content-Length'],
+        // Not logging Authorization header for security
+      }
+    });
+    console.log('Request payload:', jsonData);
 
     const req = https.request(options, (res) => {
       let responseData = '';
@@ -80,6 +96,7 @@ async function callChatGptApi(apiKey, prompt) {
 
       res.on('end', () => {
         try {
+          console.log('Raw response:', responseData);
           const parsedData = JSON.parse(responseData);
           
           if (parsedData.choices && parsedData.choices[0].message) {
@@ -89,16 +106,19 @@ async function callChatGptApi(apiKey, prompt) {
             reject(new Error(parsedData.error?.message || "Failed to get response from ChatGPT"));
           }
         } catch (e) {
+          console.error('Parse error:', e);
           reject(new Error(`Failed to parse response: ${e.message}`));
         }
       });
     });
 
     req.on('error', (error) => {
+      console.error('Request error:', error);
       reject(error);
     });
 
-    req.write(data);
+    // Write data properly
+    req.write(jsonData);
     req.end();
   });
 }
