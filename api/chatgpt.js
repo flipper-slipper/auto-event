@@ -35,7 +35,7 @@ module.exports = async (req, res) => {
     }
     
     // Process with ChatGPT
-    const prompt = `Please summarize the following email and extract any action items or important dates:\n\n${content}`;
+    const prompt = `Please summarize the following email and extract any action items or important dates. Using the infomration you extracted, write ics code to create a calendar event for each of the events. Here is the email:\n\n${content}`;
     const chatGptResponse = await callChatGptApi(apiKey, prompt);
     
     // Return successful response
@@ -52,7 +52,7 @@ async function callChatGptApi(apiKey, prompt) {
   return new Promise((resolve, reject) => {
     // Properly structure the request payload as JSON
     const requestPayload = {
-      model: "gpt-4",
+      model: "gpt-4o-mini-2024-07-18",
       messages: [
         { role: "system", content: "You are a helpful assistant that processes emails to extract key information." },
         { role: "user", content: prompt }
